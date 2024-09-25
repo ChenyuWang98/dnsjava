@@ -37,7 +37,14 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <target.jdk>1.4</target.jdk>
+        <target.jdk>1.8</target.jdk>
+        <lombok.version>1.18.32</lombok.version>
+        <delombok.output>${project.build.directory}/delombok</delombok.output>
+        <slf4j.version>1.7.36</slf4j.version>
+        <org.junit.version>5.10.2</org.junit.version>
+        <mockito.version>4.11.0</mockito.version>
+        <commons-collections4.version>4.4</commons-collections4.version>
+        <junit.version>3.8.2</junit.version>
     </properties>
 
     <build>
@@ -72,8 +79,19 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.0</version>
+                <version>3.13.0</version>
                 <configuration>
+                    <compilerArgs>
+                        <arg>-Xlint:all,-serial,-processing</arg>
+                        <arg>-Xpkginfo:always</arg>
+                    </compilerArgs>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                     <source>${target.jdk}</source>
                     <target>${target.jdk}</target>
                     <encoding>iso8859-1</encoding>
@@ -114,49 +132,60 @@
                 </executions>
             </plugin>
 
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
-                <configuration>
-                    <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                        <manifestEntries>
-                            <Bundle-RequiredExecutionEnvironment>J2SE-1.4</Bundle-RequiredExecutionEnvironment>
-                        </manifestEntries>
-                    </archive>
-                </configuration>
-            </plugin>
-
+       
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>2.4.0</version>
+                <version>5.1.9</version>
+                <extensions>true</extensions>
                 <configuration>
+                    <niceManifest>true</niceManifest>
+                    <excludeDependencies>lombok</excludeDependencies>
                     <instructions>
                         <Export-Package>org.xbill.DNS;uses:="org.xbill.DNS.util",org.xbill.DNS.spi;uses:="org.xbill.DNS,sun.net.spi.nameservice",org.xbill.DNS.utils,org.xbill.DNS.windows</Export-Package>
                     </instructions>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-maven-plugin</artifactId>
+                <version>1.18.20.0</version>
+                <configuration>
+                    <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                    <addOutputDirectory>false</addOutputDirectory>
+                    <outputDirectory>${delombok.output}</outputDirectory>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>bundle-manifest</id>
-                        <phase>process-classes</phase>
+                        <phase>generate-sources</phase>
                         <goals>
-                            <goal>manifest</goal>
+                            <goal>delombok</goal>
                         </goals>
                     </execution>
                 </executions>
+
+                <dependencies>
+                    <dependency>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                        <version>${lombok.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.7</version>
+                <version>3.6.3</version>
                 <configuration>
-                    <excludePackageNames>*.tests.*</excludePackageNames>
-                    <sourcepath>./org</sourcepath>
+                    <source>${target.jdk}</source>
+                    <sourcepath>${delombok.output}</sourcepath>
                     <debug>true</debug>
                     <windowtitle>dnsjava documentation</windowtitle>
-                    <footer></footer>
+                    <footer/>
+                    <doclint>none</doclint>
+                    <excludePackageNames>android,android.*,sun.*,*.tests.*</excludePackageNames>
                 </configuration>
                 <executions>
                     <execution>
@@ -165,16 +194,32 @@
                             <goal>jar</goal>
                         </goals>
                     </execution>
-                </executions>
-            </plugin>
+                </executions>            </plugin>
+
         </plugins>
     </build>
 
     <dependencies>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>${commons-collections4.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>3.8.2</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
